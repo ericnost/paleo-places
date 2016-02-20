@@ -97,19 +97,22 @@ function mapClicked(d) {
 
     //function here to turn lat long into bounding box
     var longitudeWest = chosenSite.lng-2, latitudeSouth = chosenSite.lat-2, longitudeEast = chosenSite.lng+2, latitudeNorth = chosenSite.lat+2;
-    var api = "http://api.neotomadb.org/v1/data/sites?loc="+longitudeWest+","+latitudeSouth+","+longitudeEast+","+latitudeNorth;
-    console.log(api)
+    var loc = longitudeWest+","+latitudeSouth+","+longitudeEast+","+latitudeNorth;
 
-    getAPI(api)
+    // console.log(api)
+
+    getAPI(loc);
 
 }
 
-function getAPI(api){
-    var url = api + '/jsonp?callback=?';
-    $.getJSON(url, function(jsonp){
-        console.log(JSON.stringify(jsonp, null, 2));
-    });
-}
+function getAPI(loc){
+    var url = "puller.php";
+
+    $.getJSON(url,{"loc":loc},interpolation);
+
+} 
+
+
 
 // Time selector functions
 //      Ripped off from https://bl.ocks.org/mbostock/6452972
@@ -180,14 +183,13 @@ function brushed() {
 
 function brushend() {
 
-      timestamp = brush.extent()[0]// set timestamp for interpolation
-      console.log(timestamp); // Output to interpolation function
+      timestamp = Math.abs(brush.extent()[0]);// set timestamp for interpolation
 
 }
 
-function interpolation(){
+
+function interpolation(sitedata){
   var years = [timestamp-500, timestamp+500] //create time rnage from slider
-  d3.json("data/neotoma.json", function(sitedata) { //load API response
 
   d3.csv("data/all_pollen_final.csv", function(pollendata) { //load our pollen file
     pollendata.forEach(function(d){
@@ -196,22 +198,29 @@ function interpolation(){
     d.Pct =+ d.Pct
     });
    
-    var sitekeys = sitedata.data.map(function(d){return d.LatitudeNorth}) // sites from neotoma
-    var pollenSites = pollendata.filter(function(d){return sitekeys.includes(d.Latitude)}).filter(function(d){return d.Age > years[0] && d.Age < years[1]}) //filter our sites by whether they match results from neotoma and the year range
+    var sitekeys = sitedata.data.map(function(d){return d.LatitudeNorth});
+    var pollenSites = pollendata.filter(function(d){return sitekeys.includes(d.Latitude)}).filter(function(d){return d.Age > years[0] && d.Age < years[1]});
+
+     //filter our sites by whether they match results from neotoma and the year range
 
     var pollenNest = d3.nest() //nest data by taxon
         .key(function(d) { return d.Taxon})
         .map(pollenSites);
 
     var taxKeys = d3.keys(pollenNest)
-    var dump =[]
+    var dump = []
     for (n=0; n<taxKeys.length; n++){
-        mean = d3.mean(pollenNest[taxKeys[n]], function(d){return d.Pct}) //average pollen percent (abundance) across sites
-        dump[taxKeys[n]] = mean
+        mean = d3.mean(pollenNest[taxKeys[n]], function(d){return d.Pct}); //average pollen percent (abundance) across sites
+
+        var t = { "taxon": taxKeys[n], "distribution": mean };
+        dump.push(t);
+        // dump[taxKeys[n]] = mean;
     }
+
+    drawLandscape(dump);
     //call drawing function with dump
-  })
-  })
+  });
+  
 }
 
 
@@ -242,16 +251,18 @@ img.src = 'img/oak.png';
 
 var iconLibrary = {
     "QUERCUS" : "oak.png",
-    "TSUGA" : "hemlock.gif"
+    "TSUGAX" : "hemlock.gif",
+    "ALNUS" : "alder.png",
+    "POPULUS" : "aspen.png",
+    "ASTERX" : "aster_lateriflorus.png",
+    "BETULA" : "birch.png",
+    "POACEAE" : "grass.png",
+    "ACER" : "maple.png",
+    "PINUSX" : "pine.jpg",
+    "CYPERACE" : "sedge.png",
+    "SELAGINE": "spikemoss.png",
+    "PICEAX" : "spruce.png"
 };
-
-var dummyInput =  [ 
-    { "taxon" : "QUERCUS",
-    "distribution" : 38 },
-
-    { "taxon" : "TSUGA",
-    "distribution" : 50 }
-];
 
 
 
@@ -262,11 +273,13 @@ function drawLandscape(species) {
             function scatterIcons(s) {
 
                 var taxon = s.taxon;
-
+               
                 if(iconLibrary[taxon]) {
 
                     var img = new Image();
                     img.src = 'img/' + iconLibrary[taxon];
+
+                    console.log(img.src);
 
                     var freq = ( s.distribution / 100 ) ;
                     var n = Math.ceil( landscapeArea / (120*120) * freq );
