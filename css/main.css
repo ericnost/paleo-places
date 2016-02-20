@@ -111,6 +111,8 @@ body, html { width: 100%; height: 100%; margin: 0; padding: 0; }
   font-weight: bold;
 }
 
+#legend.hidden { display: none; }
+
 .pie-legend { 
 text-transform: lowercase;
 font-size: 9px;

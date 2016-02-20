@@ -22,7 +22,7 @@
 
         <div id="contains-all">
 
-        <div id="legend">
+        <div id="legend" class="hidden">
         </div>
 
 
@@ -344,7 +344,7 @@ function legend(species){
     var leg = d3.select('#legend');
 
     leg.html('');
-
+    leg.classed('hidden',false);
     leg.append("text").html("<span>At this time and place, you may have found these plants:<br></span>")
 
     var width = 100,
