@@ -22,6 +22,9 @@
 
         <div id="contains-all">
 
+        <div id="legend">
+        </div>
+
 
         <div id="top-vertical">
 
@@ -45,6 +48,7 @@
 
 
         </div><!-- #contains-all -->
+
 
 
 
@@ -99,18 +103,32 @@ function mapClicked(d) {
     var longitudeWest = chosenSite.lng-2, latitudeSouth = chosenSite.lat-2, longitudeEast = chosenSite.lng+2, latitudeNorth = chosenSite.lat+2;
     var loc = longitudeWest+","+latitudeSouth+","+longitudeEast+","+latitudeNorth;
 
-    // console.log(api)
+    var url = "http://api.neotomadb.org/v1/data/sites?loc=" + loc;
 
-    getAPI(loc);
+    // getAPI(loc);
+
+  jsonp(url, function(data) {
+   interpolation(data);
+});
 
 }
 
-function getAPI(loc){
-    var url = "puller.php";
 
-    $.getJSON(url,{"loc":loc},interpolation);
+function jsonp(url, callback) {
+    var callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
+    window[callbackName] = function(data) {
+        delete window[callbackName];
+        document.body.removeChild(script);
+        callback(data);
+    };
 
-} 
+    var script = document.createElement('script');
+    script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + callbackName;
+    document.body.appendChild(script);
+}
+
+
+
 
 
 
@@ -251,14 +269,14 @@ img.src = 'img/oak.png';
 
 var iconLibrary = {
     "QUERCUS" : "oak.png",
-    "TSUGAX" : "hemlock.gif",
+    "TSUGAX" : "hemlock.png",
     "ALNUS" : "alder.png",
     "POPULUS" : "aspen.png",
     "ASTERX" : "aster_lateriflorus.png",
     "BETULA" : "birch.png",
     "POACEAE" : "grass.png",
     "ACER" : "maple.png",
-    "PINUSX" : "pine.jpg",
+    "PINUSX" : "pine.png",
     "CYPERACE" : "sedge.png",
     "SELAGINE": "spikemoss.png",
     "PICEAX" : "spruce.png"
@@ -267,6 +285,10 @@ var iconLibrary = {
 
 
 function drawLandscape(species) {
+
+
+
+
 
     species.forEach( scatterIcons );
 
@@ -277,26 +299,93 @@ function drawLandscape(species) {
                 if(iconLibrary[taxon]) {
 
                     var img = new Image();
-                    img.src = 'img/' + iconLibrary[taxon];
 
-                    console.log(img.src);
+                    img.addEventListener("load", function() {
 
                     var freq = ( s.distribution / 100 ) ;
-                    var n = Math.ceil( landscapeArea / (120*120) * freq );
+
+                    var n = Math.ceil( landscapeArea / (60*60) * freq );
+
 
                     for(i=0;i<n;i++) {
                         var posX = Math.floor( Math.random() * landscapeWidth);
                         var posY = Math.floor( Math.random() * landscapeHeight);
                         context.drawImage(img, posX, posY);
+                        console.log(img);
+                        console.log(posX);
                     }
+
+                    }, false);
+
+                    img.src = 'img/' + iconLibrary[taxon];
+
+
+                    
 
                  } 
             }
+    legend(species)
 
 }
 
 
+function legend(species){
+    d3.select('#legend').append("text").html("<span>At this time and place, you may have found these plants:<br></span>")
 
+    var width = 100,
+        height = 100,
+        radius = Math.min(width, height) / 2;
+
+    var color = d3.scale.ordinal()
+        .range(["#98abc5", "#8a89a6", "#7b6888", "#6b486b", "#a05d56", "#d0743c", "#ff8c00"]);
+
+    var arc = d3.svg.arc()
+        .outerRadius(radius - 10)
+        .innerRadius(0);
+
+    var labelArc = d3.svg.arc()
+        .outerRadius(radius - 40)
+        .innerRadius(radius - 40);
+
+    var pie = d3.layout.pie()
+        .sort(null)
+        .value(function(d) { return d.distribution; });
+
+    var piesvg = d3.select("#legend").append("svg")
+        .attr("width", width)
+        .attr("height", height)
+      .append("g")
+        .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+    var g = piesvg.selectAll(".arc")
+          .data(pie(species))
+        .enter().append("g")
+          .attr("class", "arc");
+
+      g.append("path")
+          .attr("d", arc)
+          .style("fill", function(d) { return color(d.data.taxon); });
+
+  var pielegend = d3.select("#legend").append("svg")
+        .attr("width", 100)
+        .attr("height", 100)
+    pielegend.selectAll('rect')
+      .data(species).enter()
+      .append('rect')
+      .attr("x", 0)
+      .attr('y', function(d,i){return i*10})
+      .attr("width", 10).attr("height", 10)
+      .style("fill", function(d) {
+          return color(d.taxon);
+      })
+    pielegend.selectAll('text')
+      .data(species).enter()
+      .append('text')
+      .attr("x", 15)
+      .attr('y', function(d,i){return i*10})
+      .text(function(d) {
+          return d.taxon;
+      });
+}
 
 
 
