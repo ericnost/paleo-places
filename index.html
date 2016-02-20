@@ -70,6 +70,10 @@
 
 // Leaflet functions
 
+var markerFlag = false;
+
+var sitesData = "";
+
 var mapOptions = {
   center: [36.10237644873644, -97.822265625],
   zoom: 2,
@@ -93,6 +97,8 @@ var timestamp;
 
 function mapClicked(d) {
 
+    markerFlag = true;
+
     var chosenSite = d.latlng; // This will get fed to output function
 
     markers.clearLayers();
@@ -108,7 +114,9 @@ function mapClicked(d) {
     // getAPI(loc);
 
   jsonp(url, function(data) {
-   interpolation(data);
+
+  sitesData = data;
+  interpolation(data);
 });
 
 }
@@ -134,6 +142,8 @@ function jsonp(url, callback) {
 
 // Time selector functions
 //      Ripped off from https://bl.ocks.org/mbostock/6452972
+
+
 
 var sliderHolder = d3.select('#bottom-right');
 
@@ -201,7 +211,9 @@ function brushed() {
 
 function brushend() {
 
-      timestamp = Math.abs(brush.extent()[0]);// set timestamp for interpolation
+    timestamp = Math.abs(brush.extent()[0]); // set timestamp for interpolation
+
+      if(markerFlag) { interpolation(sitesData); }
 
 }
 
@@ -286,10 +298,7 @@ var iconLibrary = {
 
 function drawLandscape(species) {
 
-
-
-
-
+    context.clearRect(0,0,landscapeWidth,landscapeHeight);
     species.forEach( scatterIcons );
 
             function scatterIcons(s) {
@@ -304,7 +313,7 @@ function drawLandscape(species) {
 
                     var freq = ( s.distribution / 100 ) ;
 
-                    var n = Math.ceil( landscapeArea / (60*60) * freq );
+                    var n = Math.ceil( landscapeArea / (40*40) * freq );
 
 
                     for(i=0;i<n;i++) {
@@ -324,13 +333,19 @@ function drawLandscape(species) {
 
                  } 
             }
-    legend(species)
+
+    legend(species);
 
 }
 
 
 function legend(species){
-    d3.select('#legend').append("text").html("<span>At this time and place, you may have found these plants:<br></span>")
+
+    var leg = d3.select('#legend');
+
+    leg.html('');
+
+    leg.append("text").html("<span>At this time and place, you may have found these plants:<br></span>")
 
     var width = 100,
         height = 100,
@@ -381,10 +396,11 @@ function legend(species){
       .data(species).enter()
       .append('text')
       .attr("x", 15)
-      .attr('y', function(d,i){return i*10})
+      .attr('y', function(d,i){return i*10+10})
       .text(function(d) {
           return d.taxon;
-      });
+      })
+      .attr("class","pie-legend");
 }
 
 
