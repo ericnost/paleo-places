@@ -168,7 +168,6 @@ function brushed() {
 }
 
 function brushend() {
-
       console.log(brush.extent()[0]); // Output to drawing function
 }
 
@@ -186,17 +185,61 @@ function brushend() {
 
 var landscapeHolder = d3.select("#top-vertical"),
     landscapeWidth = landscapeHolder.node().getBoundingClientRect().width,
-    landscapeHeight = landscapeHolder.node().getBoundingClientRect().height;
+    landscapeHeight = landscapeHolder.node().getBoundingClientRect().height,
+    landscapeArea = landscapeWidth * landscapeHeight;
+
 
 var landscape = landscapeHolder.append("canvas")
     .attr("width", landscapeWidth)
     .attr("height", landscapeHeight);
 
+var context = landscape.node().getContext("2d");
+
+var img = new Image();
+img.src = 'img/oak.png';
+
+
 var iconLibrary = {
-    "QUERCUS" : "oak.jpg",
+    "QUERCUS" : "oak.png",
+    "TSUGA" : "hemlock.gif"
+};
+
+var dummyInput =  [ 
+    { "taxon" : "QUERCUS",
+    "distribution" : 38 },
+
+    { "taxon" : "TSUGA",
+    "distribution" : 50 }
+];
+
+
+
+function drawLandscape(species) {
+
+    species.forEach( scatterIcons );
+
+            function scatterIcons(s) {
+
+                var taxon = s.taxon;
+
+                if(iconLibrary[taxon]) {
+
+                    var img = new Image();
+                    img.src = 'img/' + iconLibrary[taxon];
+
+                    var freq = ( s.distribution / 100 ) ;
+                    var n = Math.ceil( landscapeArea / (120*120) * freq );
+
+                    for(i=0;i<n;i++) {
+                        var posX = Math.floor( Math.random() * landscapeWidth);
+                        var posY = Math.floor( Math.random() * landscapeHeight);
+                        context.drawImage(img, posX, posY);
+                    }
+
+                 } 
+            }
+
 }
-
-
 
 
 
