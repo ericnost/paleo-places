@@ -24,11 +24,19 @@
 
 
         <div id="top-vertical">
+
+        Canvas goes here
+
         </div><!-- #top-vertical -->
 
         <div id="bottom-vertical">
 
         <div id="bottom-left">
+
+        <div id="leaflet-map">
+        </div>
+
+
         </div><!-- #bottom-left -->
 
 
@@ -50,8 +58,124 @@
         <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.css" />
         <script src="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.js"></script>
 
+        <script src="//d3js.org/d3.v3.min.js"></script>
+
         <script src="js/plugins.js"></script>
         <script src="js/main.js"></script>
+
+        <script>
+
+
+// Leaflet functions
+
+var mapOptions = {
+  center: [36.10237644873644, -97.822265625],
+  zoom: 2,
+  minZoom: 2,
+}
+
+var leafletMap = new L.map('leaflet-map', mapOptions);
+leafletMap.zoomControl.setPosition('bottomleft');
+
+var tileUrl = 'http://otile2.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.jpg',
+    tiles = new L.TileLayer(tileUrl);
+
+leafletMap.addLayer(tiles);
+
+var markers = new L.layerGroup().addTo(leafletMap);
+
+leafletMap.on("click", mapClicked );
+
+
+function mapClicked(d) {
+
+    var chosenSite = d.latlng; // This will get fed to output function
+
+    markers.clearLayers();
+    var marker = new L.marker(chosenSite).addTo(markers);
+    leafletMap.setView(chosenSite,6);
+
+    console.log(chosenSite);
+}
+
+
+
+
+// Time selector functions
+//      Ripped off from https://bl.ocks.org/mbostock/6452972
+
+var sliderHolder = d3.select('#bottom-right');
+
+var margin = {top: 5, right: 50, bottom: 5, left: 50},
+    width = sliderHolder.node().getBoundingClientRect().width - ( 2 * margin.right ),
+    height = sliderHolder.node().getBoundingClientRect().height - ( 2 * margin.top );
+
+var x = d3.scale.linear()
+    .domain([-30000, 0])
+    .range([0, width])
+    .clamp(true);
+
+var brush = d3.svg.brush()
+    .x(x)
+    .extent([0, 0])
+    .on("brush", brushed)
+    .on("brushend", brushend);
+
+var svg = sliderHolder.append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .attr("class","time-slider")
+    .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+svg.append("g")
+    .attr("class", "x axis")
+    .attr("transform", "translate(0," + height / 2 + ")")
+    .call(d3.svg.axis()
+      .scale(x)
+      .orient("bottom")
+      .tickFormat(function(d) { return d + " ya"; })
+      .tickSize(0)
+      .tickPadding(12))
+  .select(".domain")
+  .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
+    .attr("class", "halo");
+
+var slider = svg.append("g")
+    .attr("class", "slider")
+    .call(brush);
+
+slider.selectAll(".extent,.resize")
+    .remove();
+
+slider.select(".background")
+    .attr("height", height);
+
+var handle = slider.append("circle")
+    .attr("class", "handle")
+    .attr("transform", "translate(0," + height / 2 + ")")
+    .attr("r", 9);
+
+
+function brushed() {
+  var value = brush.extent()[0];
+
+  if (d3.event.sourceEvent) { // not a programmatic event
+    value = x.invert(d3.mouse(this)[0]);
+    brush.extent([value, value]);
+  }
+
+  handle.attr("cx", x(value));
+}
+
+function brushend() {
+
+      console.log(brush.extent()[0]); // Output to drawing function
+}
+
+
+
+        </script>
 
 
     </body>
