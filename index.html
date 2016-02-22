@@ -70,6 +70,9 @@
 
 // Leaflet functions
 
+
+var markerFlag = false;
+
 var sitesData = "";
 
 var mapOptions = {
@@ -98,6 +101,8 @@ mapClicked({"latlng": {"lat": defaultMarker[0], "lng": defaultMarker[1]}})
 
 
 function mapClicked(d) {
+
+    markerFlag = true;
 
     var chosenSite = d.latlng; // This will get fed to output function
 
@@ -217,6 +222,7 @@ function brushend() {
 
     timestamp = Math.abs(brush.extent()[0]); // set timestamp for interpolation
 
+
     interpolation(sitesData);
 
 }
@@ -284,6 +290,7 @@ function intros(){
                 })
         })
 }
+
 
 function interpolation(sitedata){
   var years = [timestamp-500, timestamp+500] //create time rnage from slider
