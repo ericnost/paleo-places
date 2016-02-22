@@ -22,27 +22,29 @@
 
         <div id="contains-all">
 
-        <div id="legend" class="hidden">
-        </div>
+        <div id="top-bar">
+        <h1>PaleoPlaces</h1>
+        <h2>A tool for visualizing past ecological communities in the places that matter to you</h2>
+        <div class="top-ui-button" id="about-button">About</div>
+        <div class="top-ui-button" id="instrutions-button">Instructions</div>
+        </div><!-- #top-bar -->
 
+       
 
         <div id="top-vertical">
+                   
+              <div id="legend" class="hidden">
+                </div><!-- #legend -->
 
         </div><!-- #top-vertical -->
 
         <div id="bottom-vertical">
 
-        <div id="bottom-left">
-
         <div id="leaflet-map">
         </div>
 
-
-        </div><!-- #bottom-left -->
-
-
-        <div id="bottom-right">
-        </div><!-- #bottom-right -->
+        <div id="timescale-holder">
+        </div>
 
         </div><!-- #bottom-vertical -->
 
@@ -67,13 +69,27 @@
 
         <script>
 
+function jsonp(url, callback) {
+    var callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
+    window[callbackName] = function(data) {
+        delete window[callbackName];
+        document.body.removeChild(script);
+        callback(data);
+    };
+
+    var script = document.createElement('script');
+    script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + callbackName;
+    document.body.appendChild(script);
+}
+
+
+
+var sitesData = ""; // Global var to hold JSON pulled from Neotoma API
+
 
 // Leaflet functions
 
-
 var markerFlag = false;
-
-var sitesData = "";
 
 var mapOptions = {
   center: [36.10237644873644, -97.822265625],
@@ -93,11 +109,6 @@ var markers = new L.layerGroup().addTo(leafletMap);
 
 leafletMap.on("click", mapClicked );
 
-var defaultMarker = [43.0667, -89.4]
-
-var timestamp = 30000
-
-mapClicked({"latlng": {"lat": defaultMarker[0], "lng": defaultMarker[1]}})
 
 
 function mapClicked(d) {
@@ -118,27 +129,14 @@ function mapClicked(d) {
 
     // getAPI(loc);
 
-  jsonp(url, function(data) {
-
-  sitesData = data;
-  interpolation(data);
-});
+          jsonp(url, function(data) {
+          sitesData = data;
+          interpolation(data);
+            });
 
 }
 
 
-function jsonp(url, callback) {
-    var callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
-    window[callbackName] = function(data) {
-        delete window[callbackName];
-        document.body.removeChild(script);
-        callback(data);
-    };
-
-    var script = document.createElement('script');
-    script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + callbackName;
-    document.body.appendChild(script);
-}
 
 
 
@@ -150,9 +148,9 @@ function jsonp(url, callback) {
 
 
 
-var sliderHolder = d3.select('#bottom-right');
+var sliderHolder = d3.select('#timescale-holder');
 
-var sliderMargin = {top: 5, right: 50, bottom: 5, left: 50},
+var sliderMargin = {top: 2, right: 50, bottom: 2, left: 50},
     sliderWidth = sliderHolder.node().getBoundingClientRect().width - ( 2 * sliderMargin.right ),
     sliderHeight = sliderHolder.node().getBoundingClientRect().height - ( 2 * sliderMargin.top );
 
@@ -169,7 +167,7 @@ var brush = d3.svg.brush()
 
 var svg = sliderHolder.append("svg")
     .attr("width", sliderWidth + sliderMargin.left + sliderMargin.right)
-    .attr("height", sliderHeight/2 + sliderMargin.top + sliderMargin.bottom)
+    .attr("height", sliderHeight + sliderMargin.top + sliderMargin.bottom)
     .attr("class","time-slider")
     .append("g")
     .attr("transform", "translate(" + sliderMargin.left + "," + sliderMargin.top + ")");
@@ -221,21 +219,15 @@ function brushed() {
 function brushend() {
 
     timestamp = Math.abs(brush.extent()[0]); // set timestamp for interpolation
-
-
     interpolation(sitesData);
 
 }
 
-var placeHolder = d3.select('#bottom-right');
 
-var placeWidth = placeHolder.node().getBoundingClientRect().width - ( 2 * sliderMargin.right ),
-    placeHeight = placeHolder.node().getBoundingClientRect().height - ( 2 * sliderMargin.top );
-
-placeHolder.append("div").attr('id', 'title').html("<span id='titleFont'>PaleoPlaces</span><br><span id='subtitleFont'>A tool for visualizing past ecological communities in the places that matter to you<p></span>")
-placeHolder.append("div").attr('id', 'title').html("<span><a href='' target='_blank'>About</span>")
 
 //Welcome transitions
+
+
 d3.select('body').append('div').attr('id', 'welcome')
 d3.select('#welcome').append('div').attr('id', 'welcomeText')
     .text("Welcome to PaleoPlaces")
@@ -249,6 +241,8 @@ d3.select('#welcome').append('div').attr('id', 'welcomeText')
     .each("end", function(d){
         intros()
     })
+
+
 function intros(){
     var timing = 4000
     d3.select('body').append('div').attr({'class': 'pick', 'id': 'map'})
@@ -477,6 +471,18 @@ function legend(species){
       .attr("class","pie-legend");
 }
 
+
+
+function init() {
+
+    var defaultMarker = [43.0667, -89.4];
+    mapClicked({"latlng": {"lat": defaultMarker[0], "lng": defaultMarker[1]}})
+
+
+
+}
+
+$(document).ready( init );
 
 
 
