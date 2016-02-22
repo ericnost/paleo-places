@@ -70,6 +70,7 @@
 
 // Leaflet functions
 
+
 var markerFlag = false;
 
 var sitesData = "";
@@ -92,7 +93,11 @@ var markers = new L.layerGroup().addTo(leafletMap);
 
 leafletMap.on("click", mapClicked );
 
-var timestamp;
+var defaultMarker = [43.0667, -89.4]
+
+var timestamp = 30000
+
+mapClicked({"latlng": {"lat": defaultMarker[0], "lng": defaultMarker[1]}})
 
 
 function mapClicked(d) {
@@ -164,18 +169,18 @@ var brush = d3.svg.brush()
 
 var svg = sliderHolder.append("svg")
     .attr("width", sliderWidth + sliderMargin.left + sliderMargin.right)
-    .attr("height", sliderHeight + sliderMargin.top + sliderMargin.bottom)
+    .attr("height", sliderHeight/2 + sliderMargin.top + sliderMargin.bottom)
     .attr("class","time-slider")
     .append("g")
     .attr("transform", "translate(" + sliderMargin.left + "," + sliderMargin.top + ")");
 
 svg.append("g")
     .attr("class", "x axis")
-    .attr("transform", "translate(0," + sliderHeight / 2 + ")")
+    .attr("transform", "translate(0," + sliderHeight / 4 + ")")
     .call(d3.svg.axis()
       .scale(x)
       .orient("bottom")
-      .tickFormat(function(d) { return d + " ya"; })
+      .tickFormat(function(d) { return Math.abs(d) + " ybp"; })
       .tickSize(0)
       .tickPadding(12))
   .select(".domain")
@@ -194,8 +199,12 @@ slider.select(".background")
 
 var handle = slider.append("circle")
     .attr("class", "handle")
-    .attr("transform", "translate(0," + sliderHeight / 2 + ")")
+    .attr("transform", "translate(0," + sliderHeight / 4 + ")")
     .attr("r", 9);
+
+slider
+    .call(brush.extent([-12000, -12000]))
+    .call(brush.event);
 
 
 function brushed() {
@@ -213,8 +222,73 @@ function brushend() {
 
     timestamp = Math.abs(brush.extent()[0]); // set timestamp for interpolation
 
-      if(markerFlag) { interpolation(sitesData); }
 
+    interpolation(sitesData);
+
+}
+
+var placeHolder = d3.select('#bottom-right');
+
+var placeWidth = placeHolder.node().getBoundingClientRect().width - ( 2 * sliderMargin.right ),
+    placeHeight = placeHolder.node().getBoundingClientRect().height - ( 2 * sliderMargin.top );
+
+placeHolder.append("div").attr('id', 'title').html("<span id='titleFont'>PaleoPlaces</span><br><span id='subtitleFont'>A tool for visualizing past ecological communities in the places that matter to you<p></span>")
+placeHolder.append("div").attr('id', 'title').html("<span><a href='' target='_blank'>About</span>")
+
+//Welcome transitions
+d3.select('body').append('div').attr('id', 'welcome')
+d3.select('#welcome').append('div').attr('id', 'welcomeText')
+    .text("Welcome to PaleoPlaces")
+    .transition()
+    .duration(2500)
+    .remove()
+ d3.select('#welcome')    
+    .transition()
+    .duration(1500)
+    .remove()
+    .each("end", function(d){
+        intros()
+    })
+function intros(){
+    var timing = 4000
+    d3.select('body').append('div').attr({'class': 'pick', 'id': 'map'})
+        .text("First, pick a place you want to learn about.")
+        .transition()
+        .duration(timing)
+        .remove()
+        .each("end", function(d){
+            d3.select('#map')    
+                .transition()
+                .duration(timing)
+                .remove()
+            d3.select('body').append('div').attr({'class': 'pick', 'id': 'time'})
+                .text("Then, pick a time period you're interested in.")
+                .transition()
+                .duration(timing)
+                .remove()
+                .each("end", function(d){
+                    d3.select('#time')    
+                        .transition()
+                        .duration(timing)
+                        .remove()
+                        d3.select('body').append('div').attr({'class': 'pick', 'id': 'canvas'})
+                            .text("Then, up here, you'll see what the place might have looked like.")
+                            .transition()
+                            .duration(timing)
+                            .remove()
+                            .each("end", function(d){
+                                d3.select('#canvas')    
+                                    .transition()
+                                    .duration(timing)
+                                    .remove()
+                                d3.select('body').append('div').attr({'class': 'pick', 'id': 'dynamic'})
+                                    .text("Finally, you can go back and explore how the place changed over time by moving the slider. You can also pick a new place.")
+                                    .transition()
+                                    .duration(timing)
+                                    .remove()
+                            })
+                })
+        })
 }
 
 
