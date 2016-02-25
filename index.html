@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-        <title></title>
+        <title>PaleoPlaces — A visualization of past landscapes</title>
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -26,7 +26,7 @@
         <h1>PaleoPlaces</h1>
         <h2>A tool for visualizing past ecological communities in the places that matter to you</h2>
         <div class="top-ui-button" id="about-button">About</div>
-        <div class="top-ui-button" id="instrutions-button">Instructions</div>
+        <div class="top-ui-button" id="instructions-button">Instructions</div>
         </div><!-- #top-bar -->
 
        
@@ -63,6 +63,8 @@
         <script src="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.js"></script>
 
         <script src="//d3js.org/d3.v3.min.js"></script>
+        <script src="//d3js.org/queue.v1.min.js"></script>
+
 
         <script src="js/plugins.js"></script>
         <script src="js/main.js"></script>
@@ -89,11 +91,11 @@ var sitesData = ""; // Global var to hold JSON pulled from Neotoma API
 
 // Leaflet functions
 
-var markerFlag = false;
+
 
 var mapOptions = {
-  center: [36.10237644873644, -97.822265625],
-  zoom: 2,
+  center: [43.0667, -89.4],
+  zoom: 6,
   minZoom: 2,
 }
 
@@ -105,42 +107,18 @@ var tileUrl = 'http://otile2.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.jpg',
 
 leafletMap.addLayer(tiles);
 
-var markers = new L.layerGroup().addTo(leafletMap);
+var marker = new L.marker([43.0667, -89.4]).addTo(leafletMap);
 
-leafletMap.on("click", mapClicked );
-
+leafletMap.on("click", function(d) {
+	mapClicked(d);
+	masterLandscapeHandler(true);
+});
 
 
 function mapClicked(d) {
-
-    markerFlag = true;
-
-    var chosenSite = d.latlng; // This will get fed to output function
-
-    markers.clearLayers();
-    var marker = new L.marker(chosenSite).addTo(markers);
-    leafletMap.setView(chosenSite,6);
-
-    //function here to turn lat long into bounding box
-    var longitudeWest = chosenSite.lng-2, latitudeSouth = chosenSite.lat-2, longitudeEast = chosenSite.lng+2, latitudeNorth = chosenSite.lat+2;
-    var loc = longitudeWest+","+latitudeSouth+","+longitudeEast+","+latitudeNorth;
-
-    var url = "http://api.neotomadb.org/v1/data/sites?loc=" + loc;
-
-    // getAPI(loc);
-
-          jsonp(url, function(data) {
-          sitesData = data;
-          interpolation(data);
-            });
-
+    marker.setLatLng(d.latlng);
+    leafletMap.setView(d.latlng,6);
 }
-
-
-
-
-
-
 
 
 // Time selector functions
@@ -155,7 +133,7 @@ var sliderMargin = {top: 2, right: 50, bottom: 2, left: 50},
     sliderHeight = sliderHolder.node().getBoundingClientRect().height - ( 2 * sliderMargin.top );
 
 var x = d3.scale.linear()
-    .domain([-30000, 0])
+    .domain([-20000, 0])
     .range([0, sliderWidth])
     .clamp(true);
 
@@ -200,8 +178,10 @@ var handle = slider.append("circle")
     .attr("transform", "translate(0," + sliderHeight / 4 + ")")
     .attr("r", 9);
 
+var timestamp = -12000;
+
 slider
-    .call(brush.extent([-12000, -12000]))
+    .call(brush.extent([timestamp,timestamp]))
     .call(brush.event);
 
 
@@ -217,77 +197,52 @@ function brushed() {
 }
 
 function brushend() {
-
     timestamp = Math.abs(brush.extent()[0]); // set timestamp for interpolation
-    interpolation(sitesData);
-
+    masterLandscapeHandler(false);
 }
 
 
 
-//Welcome transitions
 
 
-d3.select('body').append('div').attr('id', 'welcome')
-d3.select('#welcome').append('div').attr('id', 'welcomeText')
-    .text("Welcome to PaleoPlaces")
-    .transition()
-    .duration(2500)
-    .remove()
- d3.select('#welcome')    
-    .transition()
-    .duration(1500)
-    .remove()
-    .each("end", function(d){
-        intros()
-    })
+
+function masterLandscapeHandler(newSite) {
+
+	year = timestamp;
+	loc = marker.getLatLng();
 
 
-function intros(){
-    var timing = 4000
-    d3.select('body').append('div').attr({'class': 'pick', 'id': 'map'})
-        .text("First, pick a place you want to learn about.")
-        .transition()
-        .duration(timing)
-        .remove()
-        .each("end", function(d){
-            d3.select('#map')    
-                .transition()
-                .duration(timing)
-                .remove()
-            d3.select('body').append('div').attr({'class': 'pick', 'id': 'time'})
-                .text("Then, pick a time period you're interested in.")
-                .transition()
-                .duration(timing)
-                .remove()
-                .each("end", function(d){
-                    d3.select('#time')    
-                        .transition()
-                        .duration(timing)
-                        .remove()
-                        d3.select('body').append('div').attr({'class': 'pick', 'id': 'canvas'})
-                            .text("Then, up here, you'll see what the place might have looked like.")
-                            .transition()
-                            .duration(timing)
-                            .remove()
-                            .each("end", function(d){
-                                d3.select('#canvas')    
-                                    .transition()
-                                    .duration(timing)
-                                    .remove()
-                                d3.select('body').append('div').attr({'class': 'pick', 'id': 'dynamic'})
-                                    .text("Finally, you can go back and explore how the place changed over time by moving the slider. You can also pick a new place.")
-                                    .transition()
-                                    .duration(timing)
-                                    .remove()
-                            })
-                })
-        })
+	// Begin by checking on glacier cover
+	if( checkGlaciation(loc,year) ) { drawGlacier(); }
+
+	else {
+
+		// If this came from the map, let's ask Neotoma for the nearby sites
+			if( newSite || sitesData == "" ) {
+				    var longitudeWest = loc.lng-2, latitudeSouth = loc.lat-2, longitudeEast = loc.lng+2, latitudeNorth = loc.lat+2;
+				    var neotomaLoc = longitudeWest+","+latitudeSouth+","+longitudeEast+","+latitudeNorth;
+
+				    var url = "http://api.neotomadb.org/v1/data/sites?loc=" + neotomaLoc;
+				          jsonp(url, function(data) {
+				          sitesData = data;
+				          console.log("inner");
+				          interpolation();  
+				          });
+
+				      }
+
+			else { interpolation(); console.log("outer"); }
+	}
 }
 
 
-function interpolation(sitedata){
-  var years = [timestamp-500, timestamp+500] //create time rnage from slider
+
+
+
+
+
+function interpolation(){
+  var years = [timestamp-500, timestamp+500] //create time range from slider
 
   d3.csv("data/all_pollen_final.csv", function(pollendata) { //load our pollen file
     pollendata.forEach(function(d){
@@ -296,7 +251,7 @@ function interpolation(sitedata){
     d.Pct =+ d.Pct
     });
    
-    var sitekeys = sitedata.data.map(function(d){return d.LatitudeNorth});
+    var sitekeys = sitesData.data.map(function(d){return d.LatitudeNorth});
     var pollenSites = pollendata.filter(function(d){return sitekeys.includes(d.Latitude)}).filter(function(d){return d.Age > years[0] && d.Age < years[1]});
 
      //filter our sites by whether they match results from neotoma and the year range
@@ -324,11 +279,6 @@ function interpolation(sitedata){
 
 
 
-
-
-
-
-
 // Canvas drawing function
 
 var landscapeHolder = d3.select("#top-vertical"),
@@ -342,10 +292,6 @@ var landscape = landscapeHolder.append("canvas")
     .attr("height", landscapeHeight);
 
 var context = landscape.node().getContext("2d");
-
-var img = new Image();
-img.src = 'img/oak.png';
-
 
 var iconLibrary = {
     "QUERCUS" : "oak.png",
@@ -361,6 +307,18 @@ var iconLibrary = {
     "SELAGINE": "spikemoss.png",
     "PICEAX" : "spruce.png"
 };
+
+
+function drawGlacier() {
+	d3.select('#legend').style({display:"none"});
+
+	context.clearRect(0,0,landscapeWidth,landscapeHeight);
+	context.fillStyle = "#fff";
+	context.fillRect(0,0,landscapeWidth,landscapeHeight);
+	context.font="24px Helvetica";
+	context.fillStyle="#000"
+	context.fillText("There were glaciers here at that time!",100,100);
+}
 
 
 
@@ -388,17 +346,11 @@ function drawLandscape(species) {
                         var posX = Math.floor( Math.random() * landscapeWidth);
                         var posY = Math.floor( Math.random() * landscapeHeight);
                         context.drawImage(img, posX, posY);
-                        console.log(img);
-                        console.log(posX);
                     }
 
                     }, false);
 
                     img.src = 'img/' + iconLibrary[taxon];
-
-
-                    
-
                  } 
             }
 
@@ -472,20 +424,93 @@ function legend(species){
 }
 
 
+// Helper function to check if area was glaciated at given time
+function checkGlaciation(loc,year) {
 
-function init() {
+	year = Math.round(Math.abs(year)/1000) * 1000;
+	if( year < 0 || year > 21000 ) { return false; }
 
-    var defaultMarker = [43.0667, -89.4];
-    mapClicked({"latlng": {"lat": defaultMarker[0], "lng": defaultMarker[1]}})
+	function tweenRound(d) {
+		var f = Math.round(d);
+		if(f < d) { return f + 0.5; } else { return f - 0.5; }
+	}
 
+	var lat = tweenRound(loc.lat).toString();
+	var lon = tweenRound(loc.lng).toString();
 
+	var glacierFile;
+
+	$.ajax({
+		type: "GET",
+		url: 'data/glacier-cover/ice' + year + '.csv',
+		async: false,
+		success: function(d) { glacierFile = d; }
+	});
+
+	var h = d3.csv.parse(glacierFile)
+			.filter( function(row) { return row['lat'] == lat } );
+	return parseInt( h[0][lon] );
 
 }
 
+
+function intros(){
+    var timing = 4000
+    d3.select('body').append('div').attr({'class': 'pick', 'id': 'map'})
+        .text("First, pick a place you want to learn about.")
+        .transition()
+        .duration(timing)
+        .remove()
+        .each("end", function(d){
+            d3.select('#map')    
+                .transition()
+                .duration(timing)
+                .remove()
+            d3.select('body').append('div').attr({'class': 'pick', 'id': 'time'})
+                .text("Then, pick a time period you're interested in.")
+                .transition()
+                .duration(timing)
+                .remove()
+                .each("end", function(d){
+                    d3.select('#time')    
+                        .transition()
+                        .duration(timing)
+                        .remove()
+                        d3.select('body').append('div').attr({'class': 'pick', 'id': 'canvas'})
+                            .text("Then, up here, you'll see what the place might have looked like.")
+                            .transition()
+                            .duration(timing)
+                            .remove()
+                            .each("end", function(d){
+                                d3.select('#canvas')    
+                                    .transition()
+                                    .duration(timing)
+                                    .remove()
+                                d3.select('body').append('div').attr({'class': 'pick', 'id': 'dynamic'})
+                                    .text("Finally, you can go back and explore how the place changed over time by moving the slider. You can also pick a new place.")
+                                    .transition()
+                                    .duration(timing)
+                                    .remove()
+                            })
+                })
+        })
+
+}
+
+
+// UI bar button handling
+d3.select("#instructions-button").on("click", intros);
+d3.select("#about-button").on("click", function() { window.location = 'https://github.com/garrettdashnelson/paleo-places'; });
+
+
+// Run on page load
+
+function init() {
+    intros();
+}
+
+
 $(document).ready( init );
-
-
-
 
 
         </script>
