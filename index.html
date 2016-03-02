@@ -71,30 +71,15 @@
 
         <script>
 
-function jsonp(url, callback) {
-    var callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
-    window[callbackName] = function(data) {
-        delete window[callbackName];
-        document.body.removeChild(script);
-        callback(data);
-    };
-
-    var script = document.createElement('script');
-    script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + callbackName;
-    document.body.appendChild(script);
-}
-
-
-
-var sitesData = ""; // Global var to hold JSON pulled from Neotoma API
+var sitesData; // Global var to hold JSON pulled from Neotoma API
 
 
 // Leaflet functions
 
-
+var defaultCenter = [43.0667, -89.4];
 
 var mapOptions = {
-  center: [43.0667, -89.4],
+  center: defaultCenter,
   zoom: 6,
   minZoom: 2,
 }
@@ -107,23 +92,19 @@ var tileUrl = 'http://otile2.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.jpg',
 
 leafletMap.addLayer(tiles);
 
-var marker = new L.marker([43.0667, -89.4]).addTo(leafletMap);
+var marker = new L.marker(defaultCenter).addTo(leafletMap);
 
 leafletMap.on("click", function(d) {
-	mapClicked(d);
+	marker.setLatLng(d.latlng);
+    leafletMap.setView(d.latlng,6);
 	masterLandscapeHandler(true);
 });
 
 
-function mapClicked(d) {
-    marker.setLatLng(d.latlng);
-    leafletMap.setView(d.latlng,6);
-}
 
 
 // Time selector functions
 //      Ripped off from https://bl.ocks.org/mbostock/6452972
-
 
 
 var sliderHolder = d3.select('#timescale-holder');
@@ -197,7 +178,7 @@ function brushed() {
 }
 
 function brushend() {
-    timestamp = Math.abs(brush.extent()[0]); // set timestamp for interpolation
+    timestamp = Math.abs(brush.extent()[0]);
     masterLandscapeHandler(false);
 }
 
@@ -206,32 +187,29 @@ function brushend() {
 
 
 
-function masterLandscapeHandler(newSite) {
+function masterLandscapeHandler(fromMap) {
 
 	year = timestamp;
 	loc = marker.getLatLng();
-
 
 	// Begin by checking on glacier cover
 	if( checkGlaciation(loc,year) ) { drawGlacier(); }
 
 	else {
 
-		// If this came from the map, let's ask Neotoma for the nearby sites
-			if( newSite || sitesData == "" ) {
+		// If this came from the map, or if there's nothing in sitesData yet, let's make a call to Neotoma
+			if( fromMap || !sitesData ) {
 				    var longitudeWest = loc.lng-2, latitudeSouth = loc.lat-2, longitudeEast = loc.lng+2, latitudeNorth = loc.lat+2;
 				    var neotomaLoc = longitudeWest+","+latitudeSouth+","+longitudeEast+","+latitudeNorth;
 
-				    var url = "http://api.neotomadb.org/v1/data/sites?loc=" + neotomaLoc;
-				          jsonp(url, function(data) {
-				          sitesData = data;
-				          console.log("inner");
-				          interpolation();  
-				          });
+				    $.ajax({
+						  dataType:"jsonp",
+						  url:"http://api.neotomadb.org/v1/data/sites",
+						  data:{"loc":neotomaLoc},
+						  success: function(d) { sitesData = d; interpolation(); }
+					});
 
-				      }
-
-			else { interpolation(); console.log("outer"); }
+            } else { interpolation(); }
 	}
 }
 
@@ -242,6 +220,7 @@ function masterLandscapeHandler(newSite) {
 
 
 function interpolation(){
+
   var years = [timestamp-500, timestamp+500] //create time range from slider
 
   d3.csv("data/all_pollen_final.csv", function(pollendata) { //load our pollen file
@@ -267,11 +246,9 @@ function interpolation(){
 
         var t = { "taxon": taxKeys[n], "distribution": mean };
         dump.push(t);
-        // dump[taxKeys[n]] = mean;
     }
 
-    drawLandscape(dump);
-    //call drawing function with dump
+    drawLandscape(dump); //call drawing function with dump
   });
   
 }
@@ -319,7 +296,6 @@ function drawGlacier() {
 	context.fillStyle="#000"
 	context.fillText("There were glaciers here at that time!",100,100);
 }
-
 
 
 function drawLandscape(species) {
@@ -502,15 +478,8 @@ function intros(){
 d3.select("#instructions-button").on("click", intros);
 d3.select("#about-button").on("click", function() { window.location = 'https://github.com/garrettdashnelson/paleo-places'; });
 
-
-// Run on page load
-
-function init() {
-    intros();
-}
-
-
-$(document).ready( init );
+// Run intros on load
+$(document).ready( intros );
 
 
         </script>
