@@ -3,13 +3,15 @@
 
 # TEAM
 
-    <name> -- <role> -- <twitter>
+    Garrett Dash Nelson -- @en_dash
+    Eric Nost -- @ericnost
+    Elliot Vaughan
 
 # THANKS
 
-    <name>
+    Tanya Buckingham, Rob Roth, Simon Goring, Jack Williams, Scott Farley, Neotoma Team
 
 # TECHNOLOGY COLOPHON
 
-    HTML5, CSS3
-    jQuery, Modernizr
+    HTML5, CSS3, JavaScript
+    jQuery, D3, Modernizr
