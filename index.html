@@ -87,7 +87,7 @@ var mapOptions = {
 var leafletMap = new L.map('leaflet-map', mapOptions);
 leafletMap.zoomControl.setPosition('bottomleft');
 
-var tileUrl = 'http://otile2.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.jpg',
+var tileUrl = 'http://{s}.tile.openstreetmap.se/hydda/full/{z}/{x}/{y}.png',
     tiles = new L.TileLayer(tileUrl);
 
 leafletMap.addLayer(tiles);
@@ -453,7 +453,7 @@ function intros(){
                         .duration(timing)
                         .remove()
                         d3.select('body').append('div').attr({'class': 'pick', 'id': 'canvas'})
-                            .text("Then, up here, you'll see what the place might have looked like.")
+                            .text("Up here, you'll see what the place might have looked like.")
                             .transition()
                             .duration(timing)
                             .remove()
