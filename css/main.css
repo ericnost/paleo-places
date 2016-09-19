@@ -203,28 +203,26 @@ font-style: italic; }
   position: absolute;
   width:30%;
   height:5%;
-  background: #0000ff;
+  background: #bdbdbd;
   padding: 10px;
   border-radius: 10px;
   opacity: .75;
   font-size: 16px;
-  color: white;
 }
 
 #map{
-  top:55%;
+  top:75%;
   left:10%;
 }
 
 #time{
-  top:55%;
+  top:85%;
   left:55%;
 }
 
 #canvas{
   top:10%;
   left:10%;
-  height: 10%;
 }
 
 #dynamic{
